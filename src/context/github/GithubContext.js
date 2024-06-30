@@ -7,37 +7,50 @@ const GithubContext = createContext();
 
 
 export const GithubProvider = ({children}) => {
-    const initalState = {
+    const initialState = {
       users: [],
-      loading: true
+      loading: false
     }
 
 
-    const [state, dispatch] = useReducer(githubReducer, initalState)
+    const [state, dispatch] = useReducer(githubReducer, initialState)
   
     
-      const fetchUsers = async () => {
+    // Get search results
+      const searchUsers = async (text) => {
+        const params = new URLSearchParams({
+          q:text
+        });
+
         try {
-          const response = await fetch(`https://api.github.com/users`);
+          setLoading();
+          const response = await fetch(`https://api.github.com/search/users?${params}`);
 
           // Check if the response is OK
           if (!response.ok) {
             throw new Error(`Error: ${response.status} ${response.statusText}`);
           }
     
-          const data = await response.json();
+          const {items} = await response.json();
          dispatch({
           type: 'GET_USERS',
-          payload: data,
+          payload: items,
          })
         } catch (error) {
           console.error('Fetch error:', error);
         }
       }
+
+      // Set Loading
+      const setLoading = () => dispatch({type: 'SET_LOADING'})
+
+      // Clear users
+      const clearUsers = () => dispatch({type: 'CLEAR_USERS'})
       return <GithubContext.Provider value={{
         users: state.users,
         loading: state.loading,
-        fetchUsers
+        searchUsers,
+        clearUsers
       }}>
         {children}
       </GithubContext.Provider>
